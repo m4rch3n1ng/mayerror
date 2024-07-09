@@ -6,11 +6,18 @@ version = 3
 name = "mayerror"
 version = "0.1.0"
 dependencies = [
+ "mayerror-derive",
  "owo-colors",
+ "thiserror",
+]
+
+[[package]]
+name = "mayerror-derive"
+version = "0.1.0"
+dependencies = [
  "proc-macro2",
  "quote",
  "syn",
- "thiserror",
 ]
 
 [[package]]

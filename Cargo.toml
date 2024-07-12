@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-owo-colors = "4.0.0"
+backtrace = "0.3.73"
+color-backtrace = "0.6.1"
 mayerror-derive = { version = "=0.1.0", path = "derive" }
+owo-colors = "4.0.0"
 
 [dev-dependencies]
 thiserror = "1.0.62"

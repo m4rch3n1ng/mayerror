@@ -72,10 +72,12 @@ impl Struct {
 
 		quote! {
 			#loc_body
+			let trace = ::mayerror::__private::trace();
 
 			#ident {
 				#code: ::core::convert::Into::into(value),
 				#loc_init
+				trace: trace,
 			}
 		}
 	}
@@ -152,6 +154,11 @@ impl Struct {
 			quote! {}
 		};
 
+		let backtrace = quote! {
+			let btp = ::mayerror::__private::PrettyBacktrace(&self.trace);
+			::core::write!(f, "\n\n{}", btp)?;
+		};
+
 		quote! {
 			impl ::core::fmt::Debug for #ident {
 				fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
@@ -162,6 +169,7 @@ impl Struct {
 					#error
 					#source
 					#location
+					#backtrace
 
 					Ok(())
 				}
@@ -264,10 +272,10 @@ impl Fields {
 				}
 			}
 
-			return Err(syn::Error::new_spanned(
-				field,
-				"fields without attributes are not allowed",
-			));
+			// return Err(syn::Error::new_spanned(
+				// field,
+				// "fields without attributes are not allowed",
+			// ));
 		}
 
 		let Some(code) = code else {

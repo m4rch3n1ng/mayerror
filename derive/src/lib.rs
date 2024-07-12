@@ -116,50 +116,25 @@ impl Struct {
 			let lfield = &location.member;
 
 			quote! {
-				let code = ::owo_colors::OwoColorize::red(&self.#cfield);
-				let location = ::owo_colors::OwoColorize::cyan(&self.#lfield);
+				let code = ::mayerror::__private::OwoColorize::red(&self.#cfield);
+				let location = ::mayerror::__private::OwoColorize::cyan(&self.#lfield);
 				::std::write!(f, "{} @ {}", code, location)?;
 			}
 		} else {
 			quote! {
-				let code = ::owo_colors::OwoColorize::red(&self.#cfield);
+				let code = ::mayerror::__private::OwoColorize::red(&self.#cfield);
 				::std::write!(f, "{}", code)?;
 			}
 		};
 
 		let source = quote! {
 			if let Some(source) = ::std::error::Error::source(&self.#cfield) {
-				let chain = Chain::new(source);
+				let chain = ::mayerror::__private::Chain::new(source);
 
 				::std::writeln!(f, "\n\nSource:")?;
 				for (idx, source) in chain.enumerate() {
-					let source = ::owo_colors::OwoColorize::magenta(&source);
+					let source = ::mayerror::__private::OwoColorize::magenta(&source);
 					::std::writeln!(f, "   {}: {}", idx, source)?;
-				}
-			}
-		};
-
-		// todo
-		let chain = quote! {
-			impl<'a> Iterator for Chain<'a> {
-				type Item = &'a (dyn std::error::Error + 'static);
-				fn next(&mut self) -> Option<Self::Item> {
-					if let Some(error) = self.state {
-						self.state = error.source();
-						Some(error)
-					} else {
-						None
-					}
-				}
-			}
-
-			struct Chain<'a> {
-				state: Option<&'a (dyn std::error::Error + 'static)>,
-			}
-
-			impl<'a> Chain<'a> {
-				fn new(head: &'a (dyn std::error::Error + 'static)) -> Self {
-					Chain { state: Some(head) }
 				}
 			}
 		};
@@ -171,8 +146,6 @@ impl Struct {
 						return ::std::fmt::Debug::fmt(&self.#cfield, f);
 					}
 
-					extern crate owo_colors;
-
 					#wr_debug
 
 					#source
@@ -180,8 +153,6 @@ impl Struct {
 					Ok(())
 				}
 			}
-
-			#chain
 		}
 	}
 }

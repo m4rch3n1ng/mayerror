@@ -53,10 +53,10 @@ impl Struct {
 					}
 				}
 			}
-			Some(loc) => {
+			Some(ref loc) => {
 				let loc = &loc.member;
 				quote! {
-					let location = ::std::panic::Location::caller();
+					let location = ::core::panic::Location::caller();
 					#ident {
 						#code: value.into(),
 						#loc: location.into(),
@@ -73,9 +73,9 @@ impl Struct {
 		let init = self.init();
 
 		quote! {
-			impl<T> ::std::convert::From<T> for #ident
+			impl<T> ::core::convert::From<T> for #ident
 			where
-				T: ::std::convert::Into<#ty>
+				T: ::core::convert::Into<#ty>
 			{
 				#[track_caller]
 				fn from(value: T) -> Self {
@@ -92,17 +92,17 @@ impl Struct {
 		let wr_display = if let Some(location) = &self.fields.location {
 			let lfield = &location.member;
 			quote! {
-				::std::write!(f, "{} @ {}", self.#cfield, self.#lfield)?;
+				::core::write!(f, "{} @ {}", self.#cfield, self.#lfield)?;
 			}
 		} else {
 			quote! {
-				::std::write(f, "{}", self.#cfield)?;
+				::core::write!(f, "{}", self.#cfield)?;
 			}
 		};
 
 		quote! {
-			impl ::std::fmt::Display for #ident {
-				fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+			impl ::core::fmt::Display for #ident {
+				fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
 					#wr_display
 					Ok(())
 				}
@@ -120,12 +120,12 @@ impl Struct {
 			quote! {
 				let code = ::mayerror::__private::OwoColorize::red(&self.#cfield);
 				let location = ::mayerror::__private::OwoColorize::cyan(&self.#lfield);
-				::std::write!(f, "{} @ {}", code, location)?;
+				::core::write!(f, "{} @ {}", code, location)?;
 			}
 		} else {
 			quote! {
 				let code = ::mayerror::__private::OwoColorize::red(&self.#cfield);
-				::std::write!(f, "{}", code)?;
+				::core::write!(f, "{}", code)?;
 			}
 		};
 
@@ -133,19 +133,19 @@ impl Struct {
 			if let Some(source) = ::std::error::Error::source(&self.#cfield) {
 				let chain = ::mayerror::__private::Chain::new(source);
 
-				::std::writeln!(f, "\n\nSource:")?;
+				::core::writeln!(f, "\n\nSource:")?;
 				for (idx, source) in chain.enumerate() {
 					let source = ::mayerror::__private::OwoColorize::magenta(&source);
-					::std::writeln!(f, "   {}: {}", idx, source)?;
+					::core::writeln!(f, "   {}: {}", idx, source)?;
 				}
 			}
 		};
 
 		quote! {
-			impl ::std::fmt::Debug for #ident {
-				fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+			impl ::core::fmt::Debug for #ident {
+				fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
 					if f.alternate() {
-						return ::std::fmt::Debug::fmt(&self.#cfield, f);
+						return ::core::fmt::Debug::fmt(&self.#cfield, f);
 					}
 
 					#wr_debug

@@ -41,34 +41,36 @@ impl Struct {
 		}
 	}
 
-	fn from(&self) -> TokenStream {
+	fn init(&self) -> TokenStream {
 		let ident = &self.ident;
-		let ty = &self.fields.code.ty;
+		let code = &self.fields.code.member;
 
-		let func = match &self.fields.location {
+		match &self.fields.location {
 			None => {
-				let field = &self.fields.code.member;
-
 				quote! {
 					#ident {
-						#field: value.into(),
+						#code: value.into(),
 					}
 				}
 			}
 			Some(loc) => {
-				let f1 = &self.fields.code.member;
-				let f2 = &loc.member;
-
+				let loc = &loc.member;
 				quote! {
 					let location = ::std::panic::Location::caller();
-
 					#ident {
-						#f1: value.into(),
-						#f2: location.into(),
+						#code: value.into(),
+						#loc: location.into(),
 					}
 				}
 			}
-		};
+		}
+	}
+
+	fn from(&self) -> TokenStream {
+		let ident = &self.ident;
+		let ty = &self.fields.code.ty;
+
+		let init = self.init();
 
 		quote! {
 			impl<T> ::std::convert::From<T> for #ident
@@ -77,7 +79,7 @@ impl Struct {
 			{
 				#[track_caller]
 				fn from(value: T) -> Self {
-					#func
+					#init
 				}
 			}
 		}

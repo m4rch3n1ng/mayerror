@@ -161,9 +161,8 @@ impl Struct {
 
 impl Struct {
 	fn from_syn(ast: syn::DeriveInput) -> Self {
-		let data = match ast.data {
-			Data::Struct(data) => data,
-			_ => todo!(),
+		let Data::Struct(data) = ast.data else {
+			todo!()
 		};
 
 		let ident = ast.ident;
@@ -174,8 +173,8 @@ impl Struct {
 }
 
 struct Fields {
-	location: Option<Field>,
 	code: Field,
+	location: Option<Field>,
 }
 
 struct Field {
@@ -208,17 +207,17 @@ impl Fields {
 			// let attrs = field.attrs
 			for attr in &field.attrs {
 				let ident = attr.path();
-				if ident.is_ident("location") {
-					assert!(location.is_none());
-
-					let field = Field::from_syn(idx, field);
-					location = Some(field);
-					continue 'outer;
-				} else if ident.is_ident("code") {
+				if ident.is_ident("code") {
 					assert!(code.is_none());
 
 					let field = Field::from_syn(idx, field);
 					code = Some(field);
+					continue 'outer;
+				} else if ident.is_ident("location") {
+					assert!(location.is_none());
+
+					let field = Field::from_syn(idx, field);
+					location = Some(field);
 					continue 'outer;
 				}
 			}
@@ -228,6 +227,6 @@ impl Fields {
 
 		let code = code.unwrap();
 
-		Fields { location, code }
+		Fields { code, location }
 	}
 }

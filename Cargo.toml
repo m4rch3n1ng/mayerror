@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 backtrace = "0.3.73"
-color-backtrace = "0.6.1"
 mayerror-derive = { version = "=0.1.0", path = "derive" }
 owo-colors = "4.0.0"
 

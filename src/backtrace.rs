@@ -1,4 +1,4 @@
-use color_backtrace::BacktracePrinter;
+use owo_colors::OwoColorize;
 use std::{fmt::Display, path::PathBuf};
 
 #[doc(hidden)]
@@ -59,18 +59,41 @@ impl Frame {
 	}
 }
 
+impl Display for Frame {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{:>2}: ", self.n)?;
+
+		let name = self.name.as_deref().unwrap_or("<unknown>");
+		writeln!(f, "{}", name)?;
+
+		write!(f, "    at ")?;
+		if let Some(file) = self.file.as_deref() {
+			write!(f, "{}", file.display())?;
+		} else {
+			write!(f, "<unknown source file>")?;
+		}
+		if let Some(line) = self.line {
+			writeln!(f, ":{}", line)?;
+		} else {
+			writeln!(f, ":<unknown line number>")?;
+		}
+
+		Ok(())
+	}
+}
+
 #[doc(hidden)]
 pub struct PrettyBacktrace<'a>(pub &'a backtrace::Backtrace);
 
-impl<'a> PrettyBacktrace<'a> {
+impl PrettyBacktrace<'_> {
 	fn frames(&self) -> Vec<Frame> {
-		let mut frames = self
+		let frames = self
 			.0
 			.frames()
 			.iter()
 			.flat_map(|frame| frame.symbols().iter().map(|sym| (frame.ip(), sym)))
-			.enumerate()
-			.map(|(n, (_ip, sym))| Frame {
+			.zip(1..)
+			.map(|((_ip, sym), n)| Frame {
 				n,
 				name: sym.name().map(|name| name.to_string()),
 				line: sym.lineno(),
@@ -78,32 +101,69 @@ impl<'a> PrettyBacktrace<'a> {
 			})
 			.collect::<Vec<_>>();
 
-		let mayerror_cutoff = frames
-			.iter()
-			.rposition(|frame| frame.is_mayerror_code())
-			.map(|idx| idx + 1)
-			.unwrap_or(0);
-
-		let runtime_init_cutoff = frames
-			.iter()
-			.position(|frame| frame.is_runtime_init_code())
-			.unwrap_or(usize::MAX);
-
-		let range = mayerror_cutoff..runtime_init_cutoff;
-		frames.retain(|frame| range.contains(&frame.n));
-
 		frames
 	}
 }
 
+fn filter_frames(mut frames: Vec<Frame>) -> Vec<Frame> {
+	let mayerror_cutoff = frames
+		.iter()
+		.rposition(|frame| frame.is_mayerror_code())
+		.map(|idx| idx + 2) // frames are 1-indexed
+		.unwrap_or(0);
+
+	let runtime_init_cutoff = frames
+		.iter()
+		.position(|frame| frame.is_runtime_init_code())
+		.map(|idx| idx + 1) // frames are 1-indexed
+		.unwrap_or(usize::MAX);
+
+	let range = mayerror_cutoff..runtime_init_cutoff;
+	frames.retain(|frame| range.contains(&frame.n));
+
+	frames
+}
+
+fn print_hidden(amt: usize, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	let tmp = format!(
+		"{decor} {amt} frame{plural} hidden {decor}",
+		decor = "⋮",
+		plural = if amt == 1 { "" } else { "s" }
+	);
+
+	writeln!(f, "{:^80}", tmp.cyan())
+}
+
 impl Display for PrettyBacktrace<'_> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		let printer = BacktracePrinter::new();
-		let str = printer.format_trace_to_string(self.0).unwrap();
-		write!(f, "{}", str)?;
+		writeln!(f, "{:━^80}", " BACKTRACE ")?;
 
 		let frames = self.frames();
-		write!(f, "{:?}", frames)?;
+		let last_frame_n = frames.last().map(|frame| frame.n);
+
+		let filtered_frames = filter_frames(frames);
+
+		if filtered_frames.is_empty() {
+			return writeln!(f, "<empty backtrace>");
+		}
+
+		let mut last_printed = 0;
+		for frame in &filtered_frames {
+			let delta = frame.n - last_printed;
+			if delta > 1 {
+				print_hidden(delta - 1, f)?;
+			}
+
+			write!(f, "{}", frame)?;
+
+			last_printed = frame.n;
+		}
+
+		let last_filtered = filtered_frames.last().unwrap();
+		let last_frame_n = last_frame_n.unwrap();
+		if last_filtered.n < last_frame_n {
+			print_hidden(last_frame_n - last_filtered.n, f)?;
+		}
 
 		Ok(())
 	}

@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{spanned::Spanned, Data, DeriveInput, Index, Member, Type};
 
-#[proc_macro_derive(MayError, attributes(location, code))]
+#[proc_macro_derive(MayError, attributes(code, location, backtrace))]
 pub fn hello_macro_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let ast = match syn::parse::<DeriveInput>(input) {
 		Ok(ast) => ast,
@@ -64,20 +64,35 @@ impl Struct {
 		}
 	}
 
+	fn init_backtrace(&self) -> Option<(TokenStream, TokenStream)> {
+		if let Some(trace) = &self.fields.backtrace {
+			let body = quote! {
+				let backtrace = ::mayerror::__private::trace();
+			};
+			let init = quote! {
+				#trace: backtrace,
+			};
+			Some((body, init))
+		} else {
+			None
+		}
+	}
+
 	fn init(&self) -> TokenStream {
 		let ident = &self.ident;
 		let code = &self.fields.code;
 
 		let (loc_body, loc_init) = self.init_loc().unzip();
+		let (trace_body, trace_init) = self.init_backtrace().unzip();
 
 		quote! {
 			#loc_body
-			let trace = ::mayerror::__private::trace();
+			#trace_body
 
 			#ident {
 				#code: ::core::convert::Into::into(value),
 				#loc_init
-				trace: trace,
+				#trace_init
 			}
 		}
 	}
@@ -154,9 +169,13 @@ impl Struct {
 			quote! {}
 		};
 
-		let backtrace = quote! {
-			let btp = ::mayerror::__private::PrettyBacktrace(&self.trace);
-			::core::write!(f, "\n\n{}", btp)?;
+		let backtrace = if let Some(trace) = &self.fields.backtrace {
+			quote! {
+				let backtrace = ::mayerror::__private::PrettyBacktrace(&self.#trace);
+				::core::write!(f, "\n\n{}", backtrace)?;
+			}
+		} else {
+			quote! {}
 		};
 
 		quote! {
@@ -214,6 +233,7 @@ impl Struct {
 struct Fields {
 	code: Field,
 	location: Option<Field>,
+	backtrace: Option<Field>,
 }
 
 struct Field {
@@ -246,6 +266,7 @@ impl Fields {
 	fn from_syn(fields: syn::Fields) -> Result<Fields, syn::Error> {
 		let mut location = None;
 		let mut code = None;
+		let mut backtrace = None;
 
 		'outer: for (idx, field) in fields.into_iter().enumerate() {
 			for attr in &field.attrs {
@@ -269,13 +290,24 @@ impl Fields {
 					let field = Field::from_syn(idx, field);
 					location = Some(field);
 					continue 'outer;
+				} else if ident.is_ident("backtrace") {
+					if backtrace.is_some() {
+						return Err(syn::Error::new_spanned(
+							attr,
+							"#[backtrace] is already defined",
+						));
+					}
+
+					let field = Field::from_syn(idx, field);
+					backtrace = Some(field);
+					continue 'outer;
 				}
 			}
 
-			// return Err(syn::Error::new_spanned(
-				// field,
-				// "fields without attributes are not allowed",
-			// ));
+			return Err(syn::Error::new_spanned(
+				field,
+				"fields without attributes are not allowed",
+			));
 		}
 
 		let Some(code) = code else {
@@ -285,6 +317,10 @@ impl Fields {
 			));
 		};
 
-		Ok(Fields { code, location })
+		Ok(Fields {
+			code,
+			location,
+			backtrace,
+		})
 	}
 }

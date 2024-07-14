@@ -8,7 +8,8 @@ struct MayError {
 	location: &'static std::panic::Location<'static>,
 	#[code]
 	thing: MayErrorCode,
-	trace: backtrace::Backtrace,
+	#[backtrace]
+	traces: backtrace::Backtrace,
 }
 
 #[derive(Debug, thiserror::Error)]

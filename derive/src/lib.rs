@@ -11,12 +11,14 @@ pub fn hello_macro_derive(input: proc_macro::TokenStream) -> proc_macro::TokenSt
 	let from = may_error.from();
 	let display = may_error.display();
 	let debug = may_error.debug();
+	let error = may_error.error();
 
 	quote! {
 		#body
 		#from
 		#display
 		#debug
+		#error
 	}
 	.into()
 }
@@ -49,7 +51,7 @@ impl Struct {
 			None => {
 				quote! {
 					#ident {
-						#code: value.into(),
+						#code: ::core::convert::Into::into(value),
 					}
 				}
 			}
@@ -58,8 +60,8 @@ impl Struct {
 				quote! {
 					let location = ::core::panic::Location::caller();
 					#ident {
-						#code: value.into(),
-						#loc: location.into(),
+						#code: ::core::convert::Into::into(value),
+						#loc: ::core::convert::Into::into(location),
 					}
 				}
 			}
@@ -154,6 +156,23 @@ impl Struct {
 
 					Ok(())
 				}
+			}
+		}
+	}
+
+	fn error(&self) -> TokenStream {
+		let ident = &self.ident;
+		let code = &self.fields.code.member;
+
+		let source = quote! {
+			fn source(&self) -> ::core::option::Option<&(dyn ::std::error::Error + 'static)> {
+				::std::error::Error::source(&self.#code)
+			}
+		};
+
+		quote! {
+			impl ::std::error::Error for #ident {
+				#source
 			}
 		}
 	}

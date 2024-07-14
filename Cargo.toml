@@ -8,7 +8,7 @@ owo-colors = "4.0.0"
 mayerror-derive = { version = "=0.1.0", path = "derive" }
 
 [dev-dependencies]
-thiserror = "1.0.61"
+thiserror = "1.0.62"
 
 [workspace]
 members = ["derive"]

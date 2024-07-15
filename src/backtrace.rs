@@ -29,6 +29,25 @@ impl Verbosity {
 pub static VERBOSITY: Lazy<Verbosity> = Lazy::new(Verbosity::from_env);
 
 #[doc(hidden)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ColorBt {
+	Show,
+	Hide,
+}
+
+impl ColorBt {
+	fn from_env() -> Self {
+		match std::env::var("COLORBT_SHOW_HIDDEN") {
+			Ok(s) if s != "0" => ColorBt::Show,
+			_ => ColorBt::Hide,
+		}
+	}
+}
+
+#[doc(hidden)]
+pub static COLOR_BT: Lazy<ColorBt> = Lazy::new(ColorBt::from_env);
+
+#[doc(hidden)]
 pub type Backtrace = backtrace::Backtrace;
 
 #[doc(hidden)]
@@ -240,7 +259,7 @@ impl PrettyBacktrace<'_> {
 	}
 }
 
-fn filter_frames(mut frames: Vec<Frame>) -> Vec<Frame> {
+fn filter_frames(frames: &mut Vec<Frame>) {
 	let mayerror_cutoff = frames
 		.iter()
 		.rposition(|frame| frame.is_mayerror_code())
@@ -255,8 +274,6 @@ fn filter_frames(mut frames: Vec<Frame>) -> Vec<Frame> {
 
 	let range = mayerror_cutoff..runtime_init_cutoff;
 	frames.retain(|frame| range.contains(&frame.n));
-
-	frames
 }
 
 fn print_hidden(amt: usize, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -273,17 +290,19 @@ impl Display for PrettyBacktrace<'_> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		writeln!(f, "{:━^80}", " BACKTRACE ")?;
 
-		let frames = self.frames();
+		let mut frames = self.frames();
 		let last_frame_n = frames.last().map(|frame| frame.n);
 
-		let filtered_frames = filter_frames(frames);
+		if *COLOR_BT == ColorBt::Hide {
+			filter_frames(&mut frames);
+		}
 
-		if filtered_frames.is_empty() {
+		if frames.is_empty() {
 			return writeln!(f, "<empty backtrace>");
 		}
 
 		let mut last_printed = 0;
-		for frame in &filtered_frames {
+		for frame in &frames {
 			let delta = frame.n - last_printed;
 			if delta > 1 {
 				print_hidden(delta - 1, f)?;
@@ -294,7 +313,7 @@ impl Display for PrettyBacktrace<'_> {
 			last_printed = frame.n;
 		}
 
-		let last_filtered = filtered_frames.last().unwrap();
+		let last_filtered = frames.last().unwrap();
 		let last_frame_n = last_frame_n.unwrap();
 		if last_filtered.n < last_frame_n {
 			print_hidden(last_frame_n - last_filtered.n, f)?;

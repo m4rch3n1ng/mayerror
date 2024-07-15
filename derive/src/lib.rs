@@ -176,13 +176,29 @@ impl Struct {
 					::core::write!(f, "\n\n{}", backtrace)?;
 				}
 
-				match *::mayerror::__private::VERBOSITY {
-					::mayerror::__private::Verbosity::Full => {},
-					::mayerror::__private::Verbosity::Medium => {
+				match (
+					*::mayerror::__private::VERBOSITY,
+					*::mayerror::__private::COLOR_BT,
+				) {
+					(::mayerror::__private::Verbosity::Full, ::mayerror::__private::ColorBt::Show) => {}
+					(::mayerror::__private::Verbosity::Full, ::mayerror::__private::ColorBt::Hide) => {
+						f.write_str("\n")?;
+						f.write_str(
+							"Run with COLORBT_SHOW_HIDDEN=1 environment variable to disable frame filtering.",
+						)?;
+					}
+					(::mayerror::__private::Verbosity::Medium, ::mayerror::__private::ColorBt::Show) => {
 						f.write_str("\n")?;
 						f.write_str("Run with RUST_BACKTRACE=full to include source snippets.")?;
 					}
-					::mayerror::__private::Verbosity::Minimal => {
+					(::mayerror::__private::Verbosity::Medium, ::mayerror::__private::ColorBt::Hide) => {
+						f.write_str("\n")?;
+						f.write_str(
+							"Run with COLORBT_SHOW_HIDDEN=1 environment variable to disable frame filtering.\n",
+						)?;
+						f.write_str("Run with RUST_BACKTRACE=full to include source snippets.")?;
+					}
+					(::mayerror::__private::Verbosity::Minimal, _) => {
 						f.write_str("\n")?;
 						f.write_str(
 							"Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.\n",

@@ -106,6 +106,54 @@ impl Frame {
 
 		false
 	}
+
+	/// taken from
+	/// <https://github.com/eyre-rs/eyre/blob/dded7dededca017b23dde6126bd5596eddb2deca/color-eyre/src/config.rs#L284-L328>
+	///
+	/// licensed under MIT or APACHE 2.0
+	fn is_dependency_code(&self) -> bool {
+		const SYM_PREFIXES: &[&str] = &[
+			"std::",
+			"core::",
+			"backtrace::backtrace::",
+			"_rust_begin_unwind",
+			"color_traceback::",
+			"__rust_",
+			"___rust_",
+			"__pthread",
+			"_main",
+			"main",
+			"__scrt_common_main_seh",
+			"BaseThreadInitThunk",
+			"_start",
+			"__libc_start_main",
+			"start_thread",
+		];
+
+		if let Some(name) = &self.name {
+			if SYM_PREFIXES.iter().any(|x| name.starts_with(x)) {
+				return true;
+			}
+		}
+
+		const FILE_PREFIXES: &[&str] = &[
+			"/rustc/",
+			"src/libstd/",
+			"src/libpanic_unwind/",
+			"src/libtest/",
+		];
+
+		if let Some(file) = &self.file {
+			let filename = file.to_string_lossy();
+			if FILE_PREFIXES.iter().any(|x| filename.starts_with(x))
+				|| filename.contains("/.cargo/registry/src/")
+			{
+				return true;
+			}
+		}
+
+		false
+	}
 }
 
 impl Display for Frame {
@@ -113,18 +161,30 @@ impl Display for Frame {
 		write!(f, "{:>2}: ", self.n)?;
 
 		let name = self.name.as_deref().unwrap_or("<unknown>");
-		writeln!(f, "{}", name)?;
+		let (name, hash_suffix) = match name.len().checked_sub(19).map(|x| name.split_at(x)) {
+			Some((name, hash_suffix)) if !name.is_empty() && hash_suffix.starts_with("::h") => {
+				(name, hash_suffix)
+			}
+			_ => (name, "<unknown>"),
+		};
+
+		if self.is_dependency_code() {
+			write!(f, "{}", name.green())?;
+		} else {
+			write!(f, "{}", name.red())?;
+		}
+		writeln!(f, "{}", hash_suffix)?;
 
 		write!(f, "    at ")?;
 		if let Some(file) = self.file.as_deref() {
-			write!(f, "{}", file.display())?;
+			write!(f, "{}", file.display().purple())?;
 		} else {
-			write!(f, "<unknown source file>")?;
+			write!(f, "{}", "<unknown source file>".purple())?;
 		}
 		if let Some(line) = self.line {
-			writeln!(f, ":{}", line)?;
+			writeln!(f, ":{}", line.purple())?;
 		} else {
-			writeln!(f, ":<unknown line number>")?;
+			writeln!(f, ":{}", "<unknown line number>".purple())?;
 		}
 
 		write!(f, "{}", Source(self))?;

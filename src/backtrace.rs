@@ -1,3 +1,4 @@
+use once_cell::sync::Lazy;
 use owo_colors::OwoColorize;
 use std::{
 	fmt::Display,
@@ -5,6 +6,27 @@ use std::{
 	io::{BufRead, BufReader},
 	path::PathBuf,
 };
+
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Verbosity {
+	Minimal,
+	Medium,
+	Full,
+}
+
+impl Verbosity {
+	fn from_env() -> Self {
+		match std::env::var("RUST_LIB_BACKTRACE").or_else(|_| std::env::var("RUST_BACKTRACE")) {
+			Ok(s) if s == "full" => Verbosity::Full,
+			Ok(s) if s != "0" => Verbosity::Medium,
+			_ => Verbosity::Minimal,
+		}
+	}
+}
+
+#[doc(hidden)]
+pub static VERBOSITY: Lazy<Verbosity> = Lazy::new(Verbosity::from_env);
 
 #[doc(hidden)]
 pub type Backtrace = backtrace::Backtrace;
@@ -187,7 +209,9 @@ impl Display for Frame {
 			writeln!(f, ":{}", "<unknown line number>".purple())?;
 		}
 
-		write!(f, "{}", Source(self))?;
+		if *VERBOSITY >= Verbosity::Full {
+			write!(f, "{}", Source(self))?;
+		}
 
 		Ok(())
 	}

@@ -171,8 +171,25 @@ impl Struct {
 
 		let backtrace = if let Some(trace) = &self.fields.backtrace {
 			quote! {
-				let backtrace = ::mayerror::__private::PrettyBacktrace(&self.#trace);
-				::core::write!(f, "\n\n{}", backtrace)?;
+				if *::mayerror::__private::VERBOSITY >= ::mayerror::__private::Verbosity::Medium {
+					let backtrace = ::mayerror::__private::PrettyBacktrace(&self.#trace);
+					::core::write!(f, "\n\n{}", backtrace)?;
+				}
+
+				match *::mayerror::__private::VERBOSITY {
+					::mayerror::__private::Verbosity::Full => {},
+					::mayerror::__private::Verbosity::Medium => {
+						f.write_str("\n")?;
+						f.write_str("Run with RUST_BACKTRACE=full to include source snippets.")?;
+					}
+					::mayerror::__private::Verbosity::Minimal => {
+						f.write_str("\n")?;
+						f.write_str(
+							"Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.\n",
+						)?;
+						f.write_str("Run with RUST_BACKTRACE=full to include source snippets.")?;
+					}
+				}
 			}
 		} else {
 			quote! {}

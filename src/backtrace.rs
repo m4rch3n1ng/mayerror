@@ -1,5 +1,10 @@
 use owo_colors::OwoColorize;
-use std::{fmt::Display, path::PathBuf};
+use std::{
+	fmt::Display,
+	fs::File,
+	io::{BufRead, BufReader},
+	path::PathBuf,
+};
 
 #[doc(hidden)]
 pub type Backtrace = backtrace::Backtrace;
@@ -7,6 +12,50 @@ pub type Backtrace = backtrace::Backtrace;
 #[doc(hidden)]
 pub fn trace() -> self::Backtrace {
 	backtrace::Backtrace::new()
+}
+
+#[derive(Debug)]
+struct Source<'a>(&'a Frame);
+
+impl Display for Source<'_> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let Some((file, lineno)) = self.0.file.as_deref().zip(self.0.line) else {
+			return Ok(());
+		};
+
+		let file = match File::open(file) {
+			Ok(file) => file,
+			Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+			e @ Err(_) => e.unwrap(),
+		};
+
+		// 2 lines at the start, since lines are 1-indexed
+		let start = lineno.saturating_sub(3);
+
+		let reader = BufReader::new(file);
+		let lines = reader
+			.lines()
+			.map_while(Result::ok)
+			.zip(1..)
+			.skip(start as usize)
+			.take(5);
+
+		for (line, curr_lineno) in lines {
+			if curr_lineno == lineno {
+				writeln!(
+					f,
+					"{:>8} {} {}",
+					curr_lineno.bold(),
+					">".bold(),
+					line.bold()
+				)?;
+			} else {
+				writeln!(f, "{:>8} | {}", curr_lineno, line)?;
+			}
+		}
+
+		Ok(())
+	}
 }
 
 #[derive(Debug)]
@@ -77,6 +126,8 @@ impl Display for Frame {
 		} else {
 			writeln!(f, ":<unknown line number>")?;
 		}
+
+		write!(f, "{}", Source(self))?;
 
 		Ok(())
 	}

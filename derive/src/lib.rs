@@ -43,26 +43,32 @@ impl Struct {
 		}
 	}
 
+	fn init_loc(&self) -> Option<(TokenStream, TokenStream)> {
+		if let Some(loc) = &self.fields.location {
+			let body = quote! {
+				let location = ::core::panic::Location::caller();
+			};
+			let init = quote! {
+				#loc: ::core::convert::Into::into(location)
+			};
+			Some((body, init))
+		} else {
+			None
+		}
+	}
+
 	fn init(&self) -> TokenStream {
 		let ident = &self.ident;
 		let code = &self.fields.code;
 
-		match &self.fields.location {
-			None => {
-				quote! {
-					#ident {
-						#code: ::core::convert::Into::into(value),
-					}
-				}
-			}
-			Some(loc) => {
-				quote! {
-					let location = ::core::panic::Location::caller();
-					#ident {
-						#code: ::core::convert::Into::into(value),
-						#loc: ::core::convert::Into::into(location),
-					}
-				}
+		let (loc_body, loc_init) = self.init_loc().unzip();
+
+		quote! {
+			#loc_body
+
+			#ident {
+				#code: ::core::convert::Into::into(value),
+				#loc_init,
 			}
 		}
 	}

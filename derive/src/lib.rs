@@ -49,7 +49,7 @@ impl Struct {
 				let location = ::core::panic::Location::caller();
 			};
 			let init = quote! {
-				#loc: ::core::convert::Into::into(location)
+				#loc: ::core::convert::Into::into(location),
 			};
 			Some((body, init))
 		} else {
@@ -68,7 +68,7 @@ impl Struct {
 
 			#ident {
 				#code: ::core::convert::Into::into(value),
-				#loc_init,
+				#loc_init
 			}
 		}
 	}

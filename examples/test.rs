@@ -9,7 +9,7 @@ struct MayError {
 	#[code]
 	thing: MayErrorCode,
 	#[backtrace]
-	traces: backtrace::Backtrace,
+	trace: backtrace::Backtrace,
 }
 
 #[derive(Debug, thiserror::Error)]

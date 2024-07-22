@@ -64,6 +64,7 @@ impl Struct {
 		}
 	}
 
+	#[cfg(feature = "backtrace")]
 	fn init_backtrace(&self) -> Option<(TokenStream, TokenStream)> {
 		if let Some(trace) = &self.fields.backtrace {
 			let body = quote! {
@@ -83,7 +84,11 @@ impl Struct {
 		let code = &self.fields.code;
 
 		let (loc_body, loc_init) = self.init_loc().unzip();
+
+		#[cfg(feature = "backtrace")]
 		let (trace_body, trace_init) = self.init_backtrace().unzip();
+		#[cfg(not(feature = "backtrace"))]
+		let (trace_body, trace_init) = (quote! {}, quote! {});
 
 		quote! {
 			#loc_body
@@ -169,6 +174,7 @@ impl Struct {
 			quote! {}
 		};
 
+		#[cfg(feature = "backtrace")]
 		let backtrace = if let Some(trace) = &self.fields.backtrace {
 			quote! {
 				if *::mayerror::__private::VERBOSITY >= ::mayerror::__private::Verbosity::Medium {
@@ -181,6 +187,8 @@ impl Struct {
 		} else {
 			quote! {}
 		};
+		#[cfg(not(feature = "backtrace"))]
+		let backtrace = quote! {};
 
 		quote! {
 			impl ::core::fmt::Debug for #ident {
@@ -237,6 +245,7 @@ impl Struct {
 struct Fields {
 	code: Field,
 	location: Option<Field>,
+	#[cfg(feature = "backtrace")]
 	backtrace: Option<Field>,
 }
 
@@ -270,6 +279,8 @@ impl Fields {
 	fn from_syn(fields: syn::Fields) -> Result<Fields, syn::Error> {
 		let mut location = None;
 		let mut code = None;
+
+		#[cfg(feature = "backtrace")]
 		let mut backtrace = None;
 
 		'outer: for (idx, field) in fields.into_iter().enumerate() {
@@ -293,18 +304,28 @@ impl Fields {
 
 					let field = Field::from_syn(idx, field);
 					location = Some(field);
+
 					continue 'outer;
 				} else if ident.is_ident("backtrace") {
-					if backtrace.is_some() {
-						return Err(syn::Error::new_spanned(
-							attr,
-							"#[backtrace] is already defined",
-						));
-					}
+					#[cfg(not(feature = "backtrace"))]
+					return Err(syn::Error::new_spanned(
+						attr,
+						"enable feature \"backtrace\" to use #[backtrace]",
+					));
 
-					let field = Field::from_syn(idx, field);
-					backtrace = Some(field);
-					continue 'outer;
+					#[cfg(feature = "backtrace")]
+					{
+						if backtrace.is_some() {
+							return Err(syn::Error::new_spanned(
+								attr,
+								"#[backtrace] is already defined",
+							));
+						}
+
+						let field = Field::from_syn(idx, field);
+						backtrace = Some(field);
+						continue 'outer;
+					}
 				}
 			}
 
@@ -324,6 +345,7 @@ impl Fields {
 		Ok(Fields {
 			code,
 			location,
+			#[cfg(feature = "backtrace")]
 			backtrace,
 		})
 	}

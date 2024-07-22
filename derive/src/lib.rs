@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{spanned::Spanned, Data, DeriveInput, Index, Member, Type};
 
 #[proc_macro_derive(MayError, attributes(location, code))]
@@ -31,13 +31,13 @@ struct Struct {
 impl Struct {
 	fn body(&self) -> TokenStream {
 		let ty = &self.fields.code.ty;
-		let member = &self.fields.code.member;
+		let field = &self.fields.code;
 		let ident = &self.ident;
 
 		quote! {
 			impl #ident {
 				fn code(&self) -> &#ty{
-					&self.#member
+					&self.#field
 				}
 			}
 		}
@@ -45,7 +45,7 @@ impl Struct {
 
 	fn init(&self) -> TokenStream {
 		let ident = &self.ident;
-		let code = &self.fields.code.member;
+		let code = &self.fields.code;
 
 		match &self.fields.location {
 			None => {
@@ -55,8 +55,7 @@ impl Struct {
 					}
 				}
 			}
-			Some(ref loc) => {
-				let loc = &loc.member;
+			Some(loc) => {
 				quote! {
 					let location = ::core::panic::Location::caller();
 					#ident {
@@ -89,10 +88,9 @@ impl Struct {
 
 	fn display(&self) -> TokenStream {
 		let ident = &self.ident;
-		let cfield = &self.fields.code.member;
+		let cfield = &self.fields.code;
 
-		let wr_display = if let Some(location) = &self.fields.location {
-			let lfield = &location.member;
+		let wr_display = if let Some(lfield) = &self.fields.location {
 			quote! {
 				::core::write!(f, "{} @ {}", self.#cfield, self.#lfield)?;
 			}
@@ -114,11 +112,9 @@ impl Struct {
 
 	fn debug(&self) -> TokenStream {
 		let ident = &self.ident;
-		let cfield = &self.fields.code.member;
+		let cfield = &self.fields.code;
 
-		let wr_debug = if let Some(location) = &self.fields.location {
-			let lfield = &location.member;
-
+		let wr_debug = if let Some(lfield) = &self.fields.location {
 			quote! {
 				let code = ::mayerror::__private::OwoColorize::red(&self.#cfield);
 				let location = ::mayerror::__private::OwoColorize::cyan(&self.#lfield);
@@ -162,7 +158,7 @@ impl Struct {
 
 	fn error(&self) -> TokenStream {
 		let ident = &self.ident;
-		let code = &self.fields.code.member;
+		let code = &self.fields.code;
 
 		let source = quote! {
 			fn source(&self) -> ::core::option::Option<&(dyn ::std::error::Error + 'static)> {
@@ -199,6 +195,12 @@ struct Fields {
 struct Field {
 	member: Member,
 	ty: Type,
+}
+
+impl ToTokens for Field {
+	fn to_tokens(&self, tokens: &mut TokenStream) {
+		self.member.to_tokens(tokens);
+	}
 }
 
 impl Field {

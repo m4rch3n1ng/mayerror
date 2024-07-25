@@ -4,7 +4,7 @@ use syn::{spanned::Spanned, Data, DeriveInput, Index, Member, Type};
 
 #[proc_macro_derive(MayError, attributes(location, code))]
 pub fn hello_macro_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	let ast = syn::parse::<DeriveInput>(input).unwrap();
+	let ast = syn::parse::<DeriveInput>(input).expect("syn parsing failed");
 	let may_error = Struct::from_syn(ast);
 
 	let body = may_error.body();
@@ -219,9 +219,8 @@ impl Field {
 			})
 		});
 
-		let r#type = field.ty;
-
-		Field { member, ty: r#type }
+		let ty = field.ty;
+		Field { member, ty }
 	}
 }
 

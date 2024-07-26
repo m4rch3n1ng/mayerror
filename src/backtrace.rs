@@ -52,7 +52,11 @@ pub type Backtrace = backtrace::Backtrace;
 
 #[doc(hidden)]
 pub fn trace() -> self::Backtrace {
-	backtrace::Backtrace::new()
+	if *VERBOSITY >= Verbosity::Medium {
+		backtrace::Backtrace::new()
+	} else {
+		backtrace::Backtrace::new_unresolved()
+	}
 }
 
 #[derive(Debug)]

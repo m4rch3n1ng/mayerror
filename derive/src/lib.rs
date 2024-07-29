@@ -120,17 +120,8 @@ impl Struct {
 		let ident = &self.ident;
 		let cfield = &self.fields.code;
 
-		let wr_debug = if let Some(lfield) = &self.fields.location {
-			quote! {
-				let code = ::mayerror::__private::OwoColorize::red(&self.#cfield);
-				let location = ::mayerror::__private::OwoColorize::cyan(&self.#lfield);
-				::core::write!(f, "{} @ {}", code, location)?;
-			}
-		} else {
-			quote! {
-				let code = ::mayerror::__private::OwoColorize::red(&self.#cfield);
-				::core::write!(f, "{}", code)?;
-			}
+		let error = quote! {
+			::core::write!(f, "{}", ::mayerror::__private::OwoColorize::red(&self.#cfield))?;
 		};
 
 		let source = quote! {
@@ -145,6 +136,15 @@ impl Struct {
 			}
 		};
 
+		let location = if let Some(location) = &self.fields.location {
+			quote! {
+				::core::write!(f, "\n\nLocation:")?;
+				::core::write!(f, "\n   {}", ::mayerror::__private::OwoColorize::cyan(&self.#location))?;
+			}
+		} else {
+			quote! {}
+		};
+
 		quote! {
 			impl ::core::fmt::Debug for #ident {
 				fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
@@ -152,9 +152,9 @@ impl Struct {
 						return ::core::fmt::Debug::fmt(&self.#cfield, f);
 					}
 
-					#wr_debug
-
+					#error
 					#source
+					#location
 
 					Ok(())
 				}

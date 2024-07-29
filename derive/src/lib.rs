@@ -137,10 +137,10 @@ impl Struct {
 			if let Some(source) = ::std::error::Error::source(&self.#cfield) {
 				let chain = ::mayerror::__private::Chain::new(source);
 
-				::core::writeln!(f, "\n\nSource:")?;
+				::core::write!(f, "\n\nSource:")?;
 				for (idx, source) in chain.enumerate() {
 					let source = ::mayerror::__private::OwoColorize::magenta(&source);
-					::core::writeln!(f, "   {}: {}", idx, source)?;
+					::core::write!(f, "\n   {}: {}", idx, source)?;
 				}
 			}
 		};

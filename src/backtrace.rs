@@ -322,3 +322,40 @@ impl Display for PrettyBacktrace<'_> {
 		Ok(())
 	}
 }
+
+#[doc(hidden)]
+pub struct BacktraceOmitted;
+
+impl Display for BacktraceOmitted {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match (*VERBOSITY, *COLOR_BT) {
+			(Verbosity::Full, ColorBt::Show) => {}
+			(Verbosity::Full, ColorBt::Hide) => {
+				f.write_str("\n")?;
+				f.write_str(
+				"Run with COLORBT_SHOW_HIDDEN=1 environment variable to disable frame filtering.",
+			)?;
+			}
+			(Verbosity::Medium, ColorBt::Show) => {
+				f.write_str("\n")?;
+				f.write_str("Run with RUST_BACKTRACE=full to include source snippets.")?;
+			}
+			(Verbosity::Medium, ColorBt::Hide) => {
+				f.write_str("\n")?;
+				f.write_str(
+				"Run with COLORBT_SHOW_HIDDEN=1 environment variable to disable frame filtering.\n",
+			)?;
+				f.write_str("Run with RUST_BACKTRACE=full to include source snippets.")?;
+			}
+			(Verbosity::Minimal, _) => {
+				f.write_str("\n")?;
+				f.write_str(
+				"Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.\n",
+			)?;
+				f.write_str("Run with RUST_BACKTRACE=full to include source snippets.")?;
+			}
+		}
+
+		Ok(())
+	}
+}

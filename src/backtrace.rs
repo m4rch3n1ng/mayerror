@@ -121,6 +121,33 @@ impl Frame {
 	}
 
 	/// taken from
+	/// <https://github.com/eyre-rs/eyre/blob/dded7dededca017b23dde6126bd5596eddb2deca/color-eyre/src/config.rs#L336-L356>
+	///
+	/// licensed under MIT or APACHE 2.0
+	fn is_post_panic_code(&self) -> bool {
+		const SYM_PREFIXES: &[&str] = &[
+			"_rust_begin_unwind",
+			"rust_begin_unwind",
+			"core::result::unwrap_failed",
+			"core::option::expect_none_failed",
+			"core::panicking::panic_fmt",
+			"color_backtrace::create_panic_handler",
+			"std::panicking::begin_panic",
+			"begin_panic_fmt",
+			"failure::backtrace::Backtrace::new",
+			"backtrace::capture",
+			"failure::error_message::err_msg",
+			"<failure::error::Error as core::convert::From<F>>::from",
+		];
+
+		if let Some(name) = self.name.as_deref() {
+			SYM_PREFIXES.iter().any(|x| name.starts_with(x))
+		} else {
+			false
+		}
+	}
+
+	/// taken from
 	/// <https://github.com/eyre-rs/eyre/blob/dded7dededca017b23dde6126bd5596eddb2deca/color-eyre/src/config.rs#L360-L382>
 	///
 	/// licensed under MIT or APACHE 2.0
@@ -266,7 +293,7 @@ impl PrettyBacktrace<'_> {
 fn filter_frames(frames: &mut Vec<Frame>) {
 	let mayerror_cutoff = frames
 		.iter()
-		.rposition(|frame| frame.is_mayerror_code())
+		.rposition(|frame| frame.is_mayerror_code() || frame.is_post_panic_code())
 		.map(|idx| idx + 2) // frames are 1-indexed
 		.unwrap_or(0);
 

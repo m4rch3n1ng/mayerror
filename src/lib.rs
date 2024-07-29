@@ -1,8 +1,10 @@
+pub use self::install::install;
 pub use mayerror_derive::*;
 
 #[cfg(feature = "backtrace")]
 mod backtrace;
 mod chain;
+mod install;
 
 #[doc(hidden)]
 pub mod __private {

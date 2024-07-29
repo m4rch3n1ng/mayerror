@@ -25,6 +25,13 @@ enum MayErrorCode {
 struct MayValError;
 
 fn main() -> Result<(), MayError> {
+	mayerror::install();
+	test();
+
 	let () = Err(MayErrorCode::Source(MayValError))?;
 	Ok(())
+}
+
+fn test() {
+	panic!("aahhhh help help help");
 }

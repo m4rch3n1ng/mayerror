@@ -87,15 +87,15 @@ impl Display for Source<'_> {
 
 		for (line, curr_lineno) in lines {
 			if curr_lineno == lineno {
-				writeln!(
+				write!(
 					f,
-					"{:>8} {} {}",
+					"\n{:>8} {} {}",
 					curr_lineno.bold(),
 					">".bold(),
 					line.bold()
 				)?;
 			} else {
-				writeln!(f, "{:>8} | {}", curr_lineno, line)?;
+				write!(f, "\n{:>8} | {}", curr_lineno, line)?;
 			}
 		}
 
@@ -227,9 +227,9 @@ impl Display for Frame {
 			write!(f, "{}", "<unknown source file>".purple())?;
 		}
 		if let Some(line) = self.line {
-			writeln!(f, ":{}", line.purple())?;
+			write!(f, ":{}", line.purple())?;
 		} else {
-			writeln!(f, ":{}", "<unknown line number>".purple())?;
+			write!(f, ":{}", "<unknown line number>".purple())?;
 		}
 
 		if *VERBOSITY >= Verbosity::Full {
@@ -287,12 +287,12 @@ fn print_hidden(amt: usize, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
 		plural = if amt == 1 { "" } else { "s" }
 	);
 
-	writeln!(f, "{:^80}", tmp.cyan())
+	write!(f, "{:^80}", tmp.cyan())
 }
 
 impl Display for PrettyBacktrace<'_> {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		writeln!(f, "{:━^80}", " BACKTRACE ")?;
+		write!(f, "{:━^80}", " BACKTRACE ")?;
 
 		let mut frames = self.frames();
 		let last_frame_n = frames.last().map(|frame| frame.n);
@@ -309,10 +309,11 @@ impl Display for PrettyBacktrace<'_> {
 		for frame in &frames {
 			let delta = frame.n - last_printed;
 			if delta > 1 {
+				f.write_str("\n")?;
 				print_hidden(delta - 1, f)?;
 			}
 
-			write!(f, "{}", frame)?;
+			write!(f, "\n{}", frame)?;
 
 			last_printed = frame.n;
 		}
@@ -320,6 +321,7 @@ impl Display for PrettyBacktrace<'_> {
 		let last_filtered = frames.last().unwrap();
 		let last_frame_n = last_frame_n.unwrap();
 		if last_filtered.n < last_frame_n {
+			f.write_str("\n")?;
 			print_hidden(last_frame_n - last_filtered.n, f)?;
 		}
 
@@ -335,24 +337,24 @@ impl Display for BacktraceOmitted {
 		match (*VERBOSITY, *COLOR_BT) {
 			(Verbosity::Full, ColorBt::Show) => {}
 			(Verbosity::Full, ColorBt::Hide) => {
-				f.write_str("\n")?;
+				f.write_str("\n\n")?;
 				f.write_str(
 				"Run with COLORBT_SHOW_HIDDEN=1 environment variable to disable frame filtering.",
 			)?;
 			}
 			(Verbosity::Medium, ColorBt::Show) => {
-				f.write_str("\n")?;
+				f.write_str("\n\n")?;
 				f.write_str("Run with RUST_BACKTRACE=full to include source snippets.")?;
 			}
 			(Verbosity::Medium, ColorBt::Hide) => {
-				f.write_str("\n")?;
+				f.write_str("\n\n")?;
 				f.write_str(
 				"Run with COLORBT_SHOW_HIDDEN=1 environment variable to disable frame filtering.\n",
 			)?;
 				f.write_str("Run with RUST_BACKTRACE=full to include source snippets.")?;
 			}
 			(Verbosity::Minimal, _) => {
-				f.write_str("\n")?;
+				f.write_str("\n\n")?;
 				f.write_str(
 				"Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.\n",
 			)?;

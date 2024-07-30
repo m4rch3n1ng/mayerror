@@ -341,7 +341,12 @@ impl Fields {
 						continue 'outer;
 					}
 				} else if ident.is_ident("spantrace") {
-					assert!(spantrace.is_none());
+					if spantrace.is_some() {
+						return Err(syn::Error::new_spanned(
+							attr,
+							"#[spantrace] is already defined",
+						));
+					}
 
 					let field = Field::from_syn(idx, field);
 					spantrace = Some(field);

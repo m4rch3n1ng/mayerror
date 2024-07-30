@@ -63,6 +63,20 @@ impl Struct {
 		}
 	}
 
+	fn init_spantrace(&self) -> Option<(TokenStream, TokenStream)> {
+		if let Some(spantrace) = &self.fields.spantrace {
+			let body = quote! {
+				let spantrace = ::mayerror::__private::spantrace();
+			};
+			let init = quote! {
+				#spantrace: spantrace,
+			};
+			Some((body, init))
+		} else {
+			None
+		}
+	}
+
 	fn init(&self) -> TokenStream {
 		let ident = &self.ident;
 		let code = &self.fields.code;
@@ -74,14 +88,18 @@ impl Struct {
 		#[cfg(not(feature = "backtrace"))]
 		let (trace_body, trace_init) = (quote! {}, quote! {});
 
+		let (spantrace_body, spantrace_init) = self.init_spantrace().unzip();
+
 		quote! {
 			#loc_body
 			#trace_body
+			#spantrace_body
 
 			#ident {
 				#code: ::core::convert::Into::into(value),
 				#loc_init
 				#trace_init
+				#spantrace_init
 			}
 		}
 	}
@@ -174,6 +192,15 @@ impl Struct {
 		#[cfg(not(feature = "backtrace"))]
 		let backtrace = quote! {};
 
+		let spantrace = if let Some(spantrace) = &self.fields.spantrace {
+			quote! {
+				let spantrace = ::mayerror::__private::PrettySpanTrace(&self.#spantrace);
+				::core::write!(f, "{}", spantrace)?;
+			}
+		} else {
+			quote! {}
+		};
+
 		quote! {
 			impl ::core::fmt::Debug for #ident {
 				fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
@@ -184,6 +211,7 @@ impl Struct {
 					#error
 					#source
 					#location
+					#spantrace
 					#backtrace
 
 					Ok(())
@@ -231,6 +259,7 @@ struct Fields {
 	location: Option<Field>,
 	#[cfg(feature = "backtrace")]
 	backtrace: Option<Field>,
+	spantrace: Option<Field>,
 }
 
 struct Field {
@@ -338,6 +367,7 @@ impl Fields {
 			location,
 			#[cfg(feature = "backtrace")]
 			backtrace,
+			spantrace,
 		})
 	}
 }

@@ -251,7 +251,7 @@ impl Fields {
 			todo!("error message");
 		}
 
-		let code = code.unwrap();
+		let code = code.expect("error struct has to have a #[code]");
 
 		Fields { code, location }
 	}

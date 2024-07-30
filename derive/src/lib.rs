@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{spanned::Spanned, Data, DeriveInput, Index, Member, Type};
 
-#[proc_macro_derive(MayError, attributes(code, location, backtrace))]
+#[proc_macro_derive(MayError, attributes(code, location, backtrace, spantrace))]
 pub fn hello_macro_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let ast = match syn::parse::<DeriveInput>(input) {
 		Ok(ast) => ast,
@@ -266,6 +266,7 @@ impl Fields {
 
 		#[cfg(feature = "backtrace")]
 		let mut backtrace = None;
+		let mut spantrace = None;
 
 		'outer: for (idx, field) in fields.into_iter().enumerate() {
 			for attr in &field.attrs {
@@ -310,6 +311,12 @@ impl Fields {
 						backtrace = Some(field);
 						continue 'outer;
 					}
+				} else if ident.is_ident("spantrace") {
+					assert!(spantrace.is_none());
+
+					let field = Field::from_syn(idx, field);
+					spantrace = Some(field);
+					continue 'outer;
 				}
 			}
 

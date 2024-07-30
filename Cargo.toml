@@ -12,6 +12,10 @@ owo-colors = "4.0.0"
 [dev-dependencies]
 thiserror = "1.0.62"
 
+[[example]]
+name = "error"
+required-features = ["backtrace"]
+
 [features]
 default = ["backtrace"]
 backtrace = ["dep:backtrace", "mayerror-derive/backtrace"]

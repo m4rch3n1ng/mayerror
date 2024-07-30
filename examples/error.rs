@@ -3,17 +3,17 @@
 use mayerror::MayError;
 
 #[derive(MayError)]
-struct MayError {
+struct Error {
 	#[location]
 	location: &'static std::panic::Location<'static>,
 	#[code]
-	thing: MayErrorCode,
+	code: ErrorCode,
 	#[backtrace]
-	trace: backtrace::Backtrace,
+	backtrace: backtrace::Backtrace,
 }
 
 #[derive(Debug, thiserror::Error)]
-enum MayErrorCode {
+enum ErrorCode {
 	#[error("source error")]
 	Source(#[from] MayValError),
 	#[error("unit error")]
@@ -24,14 +24,12 @@ enum MayErrorCode {
 #[error("may val error")]
 struct MayValError;
 
-fn main() -> Result<(), MayError> {
-	mayerror::install();
-	test();
-
-	let () = Err(MayErrorCode::Source(MayValError))?;
+fn main() -> Result<(), Error> {
+	one()?;
 	Ok(())
 }
 
-fn test() {
-	panic!("aahhhh help help help");
+fn one() -> Result<(), Error> {
+	let () = Err(ErrorCode::Source(MayValError))?;
+	Ok(())
 }

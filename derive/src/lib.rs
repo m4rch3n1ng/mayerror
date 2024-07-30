@@ -1,11 +1,18 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{spanned::Spanned, Data, DeriveInput, Index, Member, Type};
 
 #[proc_macro_derive(MayError, attributes(location, code))]
 pub fn hello_macro_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	let ast = syn::parse::<DeriveInput>(input).expect("syn parsing failed");
-	let may_error = Struct::from_syn(ast);
+	let ast = match syn::parse::<DeriveInput>(input) {
+		Ok(ast) => ast,
+		Err(err) => return err.to_compile_error().into(),
+	};
+
+	let may_error = match Struct::from_syn(ast) {
+		Ok(may_error) => may_error,
+		Err(err) => return err.to_compile_error().into(),
+	};
 
 	let body = may_error.body();
 	let from = may_error.from();
@@ -181,15 +188,18 @@ impl Struct {
 }
 
 impl Struct {
-	fn from_syn(ast: syn::DeriveInput) -> Self {
+	fn from_syn(ast: syn::DeriveInput) -> Result<Self, syn::Error> {
 		let Data::Struct(data) = ast.data else {
-			todo!()
+			return Err(syn::Error::new_spanned(
+				ast,
+				"#[derive(MayError)] is only supported for structs",
+			));
 		};
 
 		let ident = ast.ident;
-		let fields = Fields::from_syn(data.fields);
+		let fields = Fields::from_syn(data.fields)?;
 
-		Struct { fields, ident }
+		Ok(Struct { fields, ident })
 	}
 }
 
@@ -225,22 +235,28 @@ impl Field {
 }
 
 impl Fields {
-	fn from_syn(fields: syn::Fields) -> Fields {
+	fn from_syn(fields: syn::Fields) -> Result<Fields, syn::Error> {
 		let mut location = None;
 		let mut code = None;
 
 		'outer: for (idx, field) in fields.into_iter().enumerate() {
-			// let attrs = field.attrs
 			for attr in &field.attrs {
 				let ident = attr.path();
 				if ident.is_ident("code") {
-					assert!(code.is_none());
+					if code.is_some() {
+						return Err(syn::Error::new_spanned(attr, "#[code] is already defined"));
+					}
 
 					let field = Field::from_syn(idx, field);
 					code = Some(field);
 					continue 'outer;
 				} else if ident.is_ident("location") {
-					assert!(location.is_none());
+					if location.is_some() {
+						return Err(syn::Error::new_spanned(
+							attr,
+							"#[location] is already defined",
+						));
+					}
 
 					let field = Field::from_syn(idx, field);
 					location = Some(field);
@@ -248,11 +264,19 @@ impl Fields {
 				}
 			}
 
-			todo!("error message");
+			return Err(syn::Error::new_spanned(
+				field,
+				"fields without attributes are not allowed",
+			));
 		}
 
-		let code = code.expect("error struct has to have a #[code]");
+		let Some(code) = code else {
+			return Err(syn::Error::new(
+				Span::call_site(),
+				"error struct has to have a #[code] field",
+			));
+		};
 
-		Fields { code, location }
+		Ok(Fields { code, location })
 	}
 }

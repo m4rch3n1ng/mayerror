@@ -63,6 +63,7 @@ impl Struct {
 		}
 	}
 
+	#[cfg(feature = "spantrace")]
 	fn init_spantrace(&self) -> Option<(TokenStream, TokenStream)> {
 		if let Some(spantrace) = &self.fields.spantrace {
 			let body = quote! {
@@ -88,7 +89,10 @@ impl Struct {
 		#[cfg(not(feature = "backtrace"))]
 		let (trace_body, trace_init) = (quote! {}, quote! {});
 
+		#[cfg(feature = "spantrace")]
 		let (spantrace_body, spantrace_init) = self.init_spantrace().unzip();
+		#[cfg(not(feature = "spantrace"))]
+		let (spantrace_body, spantrace_init) = (quote! {}, quote! {});
 
 		quote! {
 			#loc_body
@@ -192,6 +196,7 @@ impl Struct {
 		#[cfg(not(feature = "backtrace"))]
 		let backtrace = quote! {};
 
+		#[cfg(feature = "spantrace")]
 		let spantrace = if let Some(spantrace) = &self.fields.spantrace {
 			quote! {
 				let spantrace = ::mayerror::__private::PrettySpanTrace(&self.#spantrace);
@@ -200,6 +205,8 @@ impl Struct {
 		} else {
 			quote! {}
 		};
+		#[cfg(not(feature = "spantrace"))]
+		let spantrace = quote! {};
 
 		quote! {
 			impl ::core::fmt::Debug for #ident {
@@ -259,6 +266,7 @@ struct Fields {
 	location: Option<Field>,
 	#[cfg(feature = "backtrace")]
 	backtrace: Option<Field>,
+	#[cfg(feature = "spantrace")]
 	spantrace: Option<Field>,
 }
 
@@ -295,6 +303,7 @@ impl Fields {
 
 		#[cfg(feature = "backtrace")]
 		let mut backtrace = None;
+		#[cfg(feature = "spantrace")]
 		let mut spantrace = None;
 
 		'outer: for (idx, field) in fields.into_iter().enumerate() {
@@ -341,16 +350,25 @@ impl Fields {
 						continue 'outer;
 					}
 				} else if ident.is_ident("spantrace") {
-					if spantrace.is_some() {
-						return Err(syn::Error::new_spanned(
-							attr,
-							"#[spantrace] is already defined",
-						));
-					}
+					#[cfg(not(feature = "spantrace"))]
+					return Err(syn::Error::new_spanned(
+						attr,
+						"enable feature \"spantrace\" to use #[spantrace]",
+					));
 
-					let field = Field::from_syn(idx, field);
-					spantrace = Some(field);
-					continue 'outer;
+					#[cfg(feature = "spantrace")]
+					{
+						if spantrace.is_some() {
+							return Err(syn::Error::new_spanned(
+								attr,
+								"#[spantrace] is already defined",
+							));
+						}
+
+						let field = Field::from_syn(idx, field);
+						spantrace = Some(field);
+						continue 'outer;
+					}
 				}
 			}
 
@@ -372,6 +390,7 @@ impl Fields {
 			location,
 			#[cfg(feature = "backtrace")]
 			backtrace,
+			#[cfg(feature = "spantrace")]
 			spantrace,
 		})
 	}

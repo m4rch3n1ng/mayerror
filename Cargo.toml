@@ -11,11 +11,11 @@ license-file = "LICENSE"
 
 [dependencies]
 backtrace = { version = "0.3.73", optional = true }
-color-spantrace = "0.2.1"
+color-spantrace = { version = "0.2.1", optional = true }
 mayerror-derive = { version = "=0.1.0", path = "derive" }
 once_cell = "1.19.0"
 owo-colors = "4.0.0"
-tracing-error = "0.2.0"
+tracing-error = { version = "0.2.0", optional = true }
 
 [dev-dependencies]
 thiserror = "1.0.62"
@@ -34,8 +34,13 @@ required-features = ["backtrace"]
 name = "usage"
 required-features = ["backtrace"]
 
+[[example]]
+name = "spantrace"
+required-features = ["spantrace"]
+
 [features]
 default = ["backtrace"]
+spantrace = ["dep:color-spantrace", "dep:tracing-error", "mayerror-derive/spantrace"]
 backtrace = ["dep:backtrace", "mayerror-derive/backtrace"]
 
 [workspace]

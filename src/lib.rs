@@ -104,6 +104,7 @@ pub use mayerror_derive::*;
 mod backtrace;
 mod chain;
 mod install;
+#[cfg(feature = "spantrace")]
 mod spantrace;
 
 #[doc(hidden)]
@@ -111,6 +112,7 @@ pub mod __private {
 	#[cfg(feature = "backtrace")]
 	pub use super::backtrace::*;
 	pub use super::chain::*;
+	#[cfg(feature = "spantrace")]
 	pub use super::spantrace::*;
 
 	pub use owo_colors::OwoColorize;

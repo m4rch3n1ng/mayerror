@@ -20,6 +20,10 @@ required-features = ["backtrace"]
 name = "composition"
 required-features = ["backtrace"]
 
+[[example]]
+name = "usage"
+required-features = ["backtrace"]
+
 [features]
 default = ["backtrace"]
 backtrace = ["dep:backtrace", "mayerror-derive/backtrace"]

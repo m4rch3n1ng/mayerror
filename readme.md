@@ -70,6 +70,8 @@ impl Word {
 }
 ```
 
+you can see a full example in [usage.rs](./examples/usage.rs)
+
 ### backtrace
 
 the `#[backtrace]` you also need to add the [backtrace](https://github.com/rust-lang/backtrace-rs) crate.

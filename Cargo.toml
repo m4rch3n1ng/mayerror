@@ -16,6 +16,10 @@ thiserror = "1.0.62"
 name = "error"
 required-features = ["backtrace"]
 
+[[example]]
+name = "composition"
+required-features = ["backtrace"]
+
 [features]
 default = ["backtrace"]
 backtrace = ["dep:backtrace", "mayerror-derive/backtrace"]

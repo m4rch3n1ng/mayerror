@@ -44,7 +44,7 @@ pub struct Error {
     #[location]
     location: &'static std::panic::Location<'static>,
     #[backtrace]
-    backtrace: backtrace::Backtrace,
+    backtrace: mayerror::Backtrace,
 }
 ```
 
@@ -71,14 +71,3 @@ impl Word {
 ```
 
 you can see a full example in [usage.rs](./examples/usage.rs)
-
-### backtrace
-
-the `#[backtrace]` you also need to add the [backtrace](https://github.com/rust-lang/backtrace-rs) crate.
-
-```toml
-[dependencies]
-backtrace = "0.3"
-```
-
-and then use `backtrace::Backtrace` in your `MayError` struct.

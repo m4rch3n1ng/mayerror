@@ -51,7 +51,7 @@
 //!     #[location]
 //!     location: &'static std::panic::Location<'static>,
 //!     #[backtrace]
-//!     backtrace: backtrace::Backtrace,
+//!     backtrace: mayerror::Backtrace,
 //! }
 //! ```
 //!
@@ -76,7 +76,7 @@
 //! #     #[location]
 //! #     location: &'static std::panic::Location<'static>,
 //! #     #[backtrace]
-//! #     backtrace: backtrace::Backtrace,
+//! #     backtrace: mayerror::Backtrace,
 //! # }
 //! #
 //! struct Word(String);

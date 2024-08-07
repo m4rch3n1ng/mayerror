@@ -10,7 +10,7 @@ license = "MPL-2.0"
 license-file = "LICENSE"
 
 [dependencies]
-backtrace = { version = "0.3.73", optional = true }
+backtrace = { version = "0.3", optional = true }
 mayerror-derive = { version = "=0.1.0", path = "derive" }
 once_cell = "1.19.0"
 owo-colors = "4.0.0"

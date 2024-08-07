@@ -5,7 +5,6 @@ edition = "2021"
 description = "proc macro for mayerror"
 repository = "https://github.com/m4rch3n1ng/mayerror"
 license = "MPL-2.0"
-license-file = "LICENSE"
 
 [lib]
 proc-macro = true

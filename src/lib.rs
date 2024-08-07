@@ -101,6 +101,9 @@ pub use self::install::install;
 pub use mayerror_derive::*;
 
 #[cfg(feature = "backtrace")]
+pub use ::backtrace::Backtrace;
+
+#[cfg(feature = "backtrace")]
 mod backtrace;
 mod chain;
 mod install;

@@ -11,7 +11,7 @@ struct Error {
 	#[location]
 	location: &'static std::panic::Location<'static>,
 	#[backtrace]
-	backtrace: backtrace::Backtrace,
+	backtrace: mayerror::Backtrace,
 }
 
 #[derive(Debug, thiserror::Error)]

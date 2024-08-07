@@ -7,7 +7,7 @@ struct Error {
 	#[code]
 	code: ErrorCode,
 	#[backtrace]
-	backtrace: backtrace::Backtrace,
+	backtrace: mayerror::Backtrace,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -33,7 +33,7 @@ struct ConfigError {
 	#[code]
 	code: ConfigErrorCode,
 	#[backtrace]
-	backtrace: backtrace::Backtrace,
+	backtrace: mayerror::Backtrace,
 }
 
 #[derive(Debug, thiserror::Error)]

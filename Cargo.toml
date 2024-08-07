@@ -7,7 +7,6 @@ description = "pretty errors with known codes"
 readme = "readme.md"
 repository = "https://github.com/m4rch3n1ng/mayerror"
 license = "MPL-2.0"
-license-file = "LICENSE"
 
 [dependencies]
 backtrace = { version = "0.3.71", optional = true }

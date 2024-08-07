@@ -14,14 +14,12 @@ pub fn hello_macro_derive(input: proc_macro::TokenStream) -> proc_macro::TokenSt
 		Err(err) => return err.to_compile_error().into(),
 	};
 
-	let body = may_error.body();
 	let from = may_error.from();
 	let display = may_error.display();
 	let debug = may_error.debug();
 	let error = may_error.error();
 
 	quote! {
-		#body
 		#from
 		#display
 		#debug
@@ -36,20 +34,6 @@ struct Struct {
 }
 
 impl Struct {
-	fn body(&self) -> TokenStream {
-		let ty = &self.fields.code.ty;
-		let field = &self.fields.code;
-		let ident = &self.ident;
-
-		quote! {
-			impl #ident {
-				fn code(&self) -> &#ty{
-					&self.#field
-				}
-			}
-		}
-	}
-
 	fn init_loc(&self) -> Option<(TokenStream, TokenStream)> {
 		if let Some(loc) = &self.fields.location {
 			let body = quote! {

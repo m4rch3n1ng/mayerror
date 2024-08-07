@@ -1,7 +1,11 @@
 [package]
 name = "mayerror"
 version = "0.1.0"
+authors = ["may <m4rch3n1ng@gmail.com>"]
 edition = "2021"
+description = "pretty errors with known codes"
+readme = "readme.md"
+repository = "https://github.com/m4rch3n1ng/mayerror"
 
 [dependencies]
 backtrace = { version = "0.3.73", optional = true }

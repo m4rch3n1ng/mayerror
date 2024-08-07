@@ -1,3 +1,4 @@
+#[cfg(feature = "backtrace")]
 use crate::backtrace::{BacktraceOmitted, PrettyBacktrace, Verbosity, VERBOSITY};
 use owo_colors::OwoColorize;
 use std::panic::PanicHookInfo;
@@ -25,10 +26,14 @@ fn panic_hook(info: &PanicHookInfo) {
 		print!("Location: {}", "<unknown>".magenta());
 	}
 
+	#[cfg(feature = "backtrace")]
 	if *VERBOSITY >= Verbosity::Medium {
 		let backtrace = ::backtrace::Backtrace::new();
 		print!("\n\n{}", PrettyBacktrace(&backtrace));
 	}
+	#[cfg(not(feature = "backtrace"))]
+	println!();
 
+	#[cfg(feature = "backtrace")]
 	println!("{}", BacktraceOmitted);
 }

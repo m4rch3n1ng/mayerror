@@ -97,7 +97,7 @@
 //! }
 //! ```
 
-pub use self::install::install;
+pub use self::install::{install, panic_hook};
 pub use mayerror_derive::*;
 
 #[cfg(feature = "backtrace")]

@@ -3,11 +3,32 @@ use crate::backtrace::{BacktraceOmitted, PrettyBacktrace, Verbosity, VERBOSITY};
 use owo_colors::OwoColorize;
 use std::panic::PanicHookInfo;
 
+/// installs the `mayerror` panic hook.
+///
+/// a standalone version of the hook can be found under [`mayerror::panic_hook`].
+///
+/// ```
+/// mayerror::install();
+/// ```
+///
+/// [`mayerror::panic_hook`]: crate::panic_hook
+///
 pub fn install() {
 	std::panic::set_hook(Box::new(panic_hook));
 }
 
-fn panic_hook(info: &PanicHookInfo) {
+/// the `mayerror` panic hook.
+///
+/// can be installed via [`mayerror::install`].
+///
+/// ```
+/// use mayerror::panic_hook;
+///
+/// std::panic::set_hook(Box::new(panic_hook));
+/// ```
+///
+/// [`mayerror::install`]: crate::install()
+pub fn panic_hook(info: &PanicHookInfo) {
 	let payload = info.payload();
 	let payload = if let Some(&s) = payload.downcast_ref::<&str>() {
 		s

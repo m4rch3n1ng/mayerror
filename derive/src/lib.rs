@@ -144,7 +144,7 @@ impl Struct {
 				::core::write!(f, "\n\nSource:")?;
 				for (idx, source) in chain.enumerate() {
 					let source = ::mayerror::__private::OwoColorize::magenta(&source);
-					::core::write!(f, "\n   {}: {}", idx, source)?;
+					::core::write!(f, "\n{:4}: {}", idx, source)?;
 				}
 			}
 		};

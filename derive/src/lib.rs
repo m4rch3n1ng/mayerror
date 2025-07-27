@@ -3,7 +3,7 @@ use quote::{quote, ToTokens};
 use syn::{spanned::Spanned, Data, DeriveInput, Index, Member, Type};
 
 #[proc_macro_derive(MayError, attributes(code, location, backtrace))]
-pub fn hello_macro_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn mayerror_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let ast = match syn::parse::<DeriveInput>(input) {
 		Ok(ast) => ast,
 		Err(err) => return err.to_compile_error().into(),
